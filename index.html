@@ -4858,7 +4858,9 @@ AI 生成コンテンツは誤りを含む可能性があります。
       for (var i = 0; i < elements.length; i++) {
         var el = elements[i];
         if (el.textContent.indexOf(subTitle) >= 0 || subTitle.indexOf(el.textContent.trim()) >= 0) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          var rect = el.getBoundingClientRect();
+          var containerRect = mainContent.getBoundingClientRect();
+          mainContent.scrollTo({ top: mainContent.scrollTop + rect.top - containerRect.top - 20, behavior: 'smooth' });
           el.style.transition = 'background 0.3s';
           el.style.background = '#ffeaa7';
           (function(target) {
@@ -4903,7 +4905,9 @@ AI 生成コンテンツは誤りを含む可能性があります。
         var targets = contentBody.querySelectorAll('.policy-heading-1, .policy-heading-2, .policy-heading-3, .policy-line');
         for (var i = 0; i < targets.length; i++) {
           if (targets[i].textContent.indexOf(sub.title) >= 0) {
-            targets[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            var r = targets[i].getBoundingClientRect();
+            var cr = mainContent.getBoundingClientRect();
+            mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - 20, behavior: 'smooth' });
             targets[i].style.transition = 'background 0.3s';
             targets[i].style.background = '#ffeaa7';
             (function(t) {
