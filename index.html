@@ -1117,9 +1117,9 @@ EFILa WAY
 
 
 エフィラグループの経営は、次の３つの思想を軸として構成されている。
-●道経一体経営＝理念と原資の思想
-●地域インフラ経営＝事業構造の思想
-●全社一丸経営＝組織文化の思想
+①道経一体経営＝理念と原資の思想
+②地域インフラ経営＝事業構造の思想
+③全社一丸経営＝組織文化の思想
 
 
   
@@ -4810,8 +4810,15 @@ AI 生成コンテンツは誤りを含む可能性があります。
         for (var i = 0; i < patterns.length; i++) {
           if (patterns[i].test(trimmed)) {
             var title = trimmed.length > 50 ? trimmed.substring(0, 50) + '...' : trimmed;
-            var isDuplicate = subs.some(function(s) { return s.title === title; });
-            if (!isDuplicate) {
+            // 同じ丸数字・ローマ数字で始まる項目は後のもので上書き
+            var prefix = trimmed.charAt(0);
+            var dupIdx = -1;
+            for (var j = 0; j < subs.length; j++) {
+              if (subs[j].title.charAt(0) === prefix) { dupIdx = j; break; }
+            }
+            if (dupIdx >= 0) {
+              subs[dupIdx].title = title;
+            } else {
               subs.push({ title: title });
             }
             break;
