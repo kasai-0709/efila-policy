@@ -4952,12 +4952,14 @@ AI 生成コンテンツは誤りを含む可能性があります。
     var lines = text.split('\n');
     var html = '';
     var firstContentLine = true;
+    var inBulletContext = false;
 
     lines.forEach(function(line) {
       var trimmed = line.trim();
 
       if (trimmed === '') {
         html += '<div class="policy-empty"></div>';
+        inBulletContext = false;
         return;
       }
 
@@ -4980,32 +4982,41 @@ AI 生成コンテンツは誤りを含む可能性があります。
 
       if (isKeyTitle) {
         firstContentLine = false;
+        inBulletContext = false;
         html += '<div class="policy-key-title">' + processed + '</div>';
       } else if (isRoman) {
         firstContentLine = false;
+        inBulletContext = false;
         html += '<div class="policy-heading-1">' + processed + '</div>';
       } else if (isDoubleAngle) {
         firstContentLine = false;
+        inBulletContext = false;
         html += '<div class="policy-heading-2">' + processed + '</div>';
       } else if (isCircleNum) {
         firstContentLine = false;
+        inBulletContext = false;
         html += '<div class="policy-heading-3">' + processed + '</div>';
       } else if (isNumbered) {
         firstContentLine = false;
+        inBulletContext = false;
         html += '<div class="policy-heading-3">' + processed + '</div>';
       } else if (isBullet) {
         firstContentLine = false;
+        inBulletContext = true;
         html += '<div class="policy-bullet">' + processed + '</div>';
       } else if (indentLevel >= 4) {
         var level = indentLevel >= 8 ? 2 : 1;
         html += '<div class="policy-indent-' + level + ' policy-line policy-doc-bullet">' + processed + '</div>';
         firstContentLine = false;
+        inBulletContext = true;
       } else {
         if (firstContentLine) {
           firstContentLine = false;
           html += '<div class="policy-line">' + processed + '</div>';
-        } else {
+        } else if (inBulletContext) {
           html += '<div class="policy-indent-2 policy-line policy-doc-bullet">' + processed + '</div>';
+        } else {
+          html += '<div class="policy-indent-2 policy-line">' + processed + '</div>';
         }
       }
     });
