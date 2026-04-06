@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>efira Policy | エフィラグループポリシー</title>
+<title>efila Policy | エフィラグループポリシー</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -822,7 +822,7 @@ body {
     box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center;
   ">
     <div style="font-size:2.2rem; margin-bottom:8px;">&#128274;</div>
-    <h1 style="font-size:1.3rem; color:#1a5276; margin-bottom:4px; font-weight:700;">efira Policy</h1>
+    <h1 style="font-size:1.3rem; color:#1a5276; margin-bottom:4px; font-weight:700;">エフィラポリシー</h1>
     <p style="font-size:0.85rem; color:#7f8c8d; margin-bottom:28px;">閲覧にはパスワードが必要です</p>
     <input id="pwInput" type="password" placeholder="パスワードを入力"
       autocomplete="off"
@@ -841,7 +841,7 @@ body {
     " onmouseover="this.style.background='#2471a3'" onmouseout="this.style.background='#1a5276'">
       ログイン
     </button>
-    <p style="font-size:0.7rem; color:#bdc3c7; margin-top:20px;">&copy; efira group</p>
+    <p style="font-size:0.7rem; color:#bdc3c7; margin-top:20px;">&copy; efila group</p>
   </div>
 </div>
 <div id="mainContent" style="display:none;">
@@ -5217,7 +5217,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
     var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
   }
-  if(sessionStorage.getItem('efira_auth')==='1'){
+  if(sessionStorage.getItem('efila_auth')==='1'){
     document.getElementById('passwordGate').style.display='none';
     document.getElementById('mainContent').style.display='';
   }
@@ -5225,7 +5225,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
     var input = document.getElementById('pwInput').value;
     var hash = await sha256(input);
     if(hash === HASH){
-      sessionStorage.setItem('efira_auth','1');
+      sessionStorage.setItem('efila_auth','1');
       document.getElementById('passwordGate').style.display='none';
       document.getElementById('mainContent').style.display='';
     } else {
