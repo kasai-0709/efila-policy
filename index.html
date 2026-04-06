@@ -844,7 +844,7 @@ body {
     <p style="font-size:0.7rem; color:#bdc3c7; margin-top:20px;">&copy; エフィラグループ</p>
   </div>
 </div>
-<div id="mainContent" style="display:none;">
+<div id="appContent" style="display:none;">
 <!-- ========== End Password Gate ========== -->
 
 <!-- Header -->
@@ -4621,13 +4621,6 @@ AI 生成コンテンツは誤りを含む可能性があります。
   var searchInput = $('searchInput');
   var searchResultsCount = $('searchResultsCount');
   var mainContent = $('mainContent');
-  var mainScroller = document.querySelector('main.main') || mainContent;
-  /* scrollIntoView後にbodyスクロールをリセットするユーティリティ */
-  function scrollToElement(el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(function() { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }, 50);
-    setTimeout(function() { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }, 300);
-  }
   var welcome = $('welcome');
   var contentCard = $('contentCard');
   var contentSectionNum = $('contentSectionNum');
@@ -4865,7 +4858,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
       for (var i = 0; i < elements.length; i++) {
         var el = elements[i];
         if (el.textContent.indexOf(subTitle) >= 0 || subTitle.indexOf(el.textContent.trim()) >= 0) {
-          scrollToElement(el);
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
           el.style.transition = 'background 0.3s';
           el.style.background = '#ffeaa7';
           (function(target) {
@@ -4910,7 +4903,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
         var targets = contentBody.querySelectorAll('.policy-heading-1, .policy-heading-2, .policy-heading-3, .policy-line');
         for (var i = 0; i < targets.length; i++) {
           if (targets[i].textContent.indexOf(sub.title) >= 0) {
-            scrollToElement(targets[i]);
+            targets[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
             targets[i].style.transition = 'background 0.3s';
             targets[i].style.background = '#ffeaa7';
             (function(t) {
@@ -5224,7 +5217,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
 })();
 </script>
 
-</div><!-- /mainContent -->
+</div><!-- /appContent -->
 
 <!-- ========== Password Gate Script ========== -->
 <script>
@@ -5236,7 +5229,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
   }
   if(sessionStorage.getItem('efila_auth')==='1'){
     document.getElementById('passwordGate').style.display='none';
-    document.getElementById('mainContent').style.display='';
+    document.getElementById('appContent').style.display='';
   }
   window.checkPw = async function(){
     var input = document.getElementById('pwInput').value;
@@ -5244,7 +5237,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
     if(hash === HASH){
       sessionStorage.setItem('efila_auth','1');
       document.getElementById('passwordGate').style.display='none';
-      document.getElementById('mainContent').style.display='';
+      document.getElementById('appContent').style.display='';
     } else {
       document.getElementById('pwError').textContent='パスワードが正しくありません';
       document.getElementById('pwInput').value='';
