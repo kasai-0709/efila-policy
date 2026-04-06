@@ -4853,7 +4853,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
     closeSidebar();
 
     // Scroll to sub-section in content after render
-    requestAnimationFrame(function() {
+    setTimeout(function() {
       var scroller = document.querySelector('main.main');
       var elements = contentBody.querySelectorAll('.policy-heading-1, .policy-heading-2, .policy-heading-3, .policy-line');
       for (var i = 0; i < elements.length; i++) {
@@ -4870,7 +4870,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
           break;
         }
       }
-    });
+    }, 100);
   }
 
   // ========== Show Section ==========
