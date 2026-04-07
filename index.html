@@ -823,6 +823,121 @@ body {
   display: block;
   animation: fadeIn 0.3s ease;
 }
+
+/* ========== Glossary Tooltip ========== */
+.glossary-term {
+  border-bottom: 1.5px dotted var(--accent);
+  color: inherit;
+  cursor: help;
+  position: relative;
+  transition: background var(--transition);
+}
+.glossary-term:hover {
+  background: rgba(230, 126, 34, 0.08);
+}
+
+.glossary-popup-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1999;
+}
+
+.glossary-popup {
+  position: fixed;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 0;
+  max-width: 380px;
+  min-width: 260px;
+  z-index: 2000;
+  animation: glossaryFadeIn 0.15s ease;
+  overflow: hidden;
+}
+
+@keyframes glossaryFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.glossary-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.glossary-popup-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.glossary-popup-title::before {
+  content: '\1F4D6';
+  font-size: 0.95rem;
+}
+
+.glossary-popup-close {
+  background: none;
+  border: none;
+  color: var(--text-inverse);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity var(--transition);
+}
+.glossary-popup-close:hover { opacity: 1; }
+
+.glossary-popup-body {
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.glossary-popup-category {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--text-light);
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
+.glossary-popup-footer {
+  padding: 6px 14px 10px;
+  font-size: 0.72rem;
+  color: var(--text-light);
+  border-top: 1px solid var(--border);
+  text-align: right;
+}
+
+.glossary-popup-footer a {
+  color: var(--primary-light);
+  text-decoration: none;
+  cursor: pointer;
+}
+.glossary-popup-footer a:hover { text-decoration: underline; }
+
+@media (max-width: 900px) {
+  .glossary-popup {
+    max-width: calc(100vw - 32px);
+    left: 16px !important;
+    right: 16px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -4625,6 +4740,60 @@ AI 生成コンテンツは誤りを含む可能性があります。
                                                                                                                                                                                      相手への敬意と、「今回はご縁がなかったが、今はその時ではないだけである」という前向きな意味を込めて、この表現を使用する。`
   }
 ];
+
+// ========== Build Glossary Dictionary from last section ==========
+var GLOSSARY_TERMS = (function() {
+  var glossarySection = POLICY_DATA[POLICY_DATA.length - 1];
+  if (!glossarySection || !glossarySection.content) return {};
+  var lines = glossarySection.content.split('\n');
+  var terms = {};
+  var currentTerm = null;
+  var currentCategory = '';
+  var currentDef = [];
+  var termPattern = /^(\d+)[\.\uff0e]\s*(.+)/;
+  var categoryPattern = /^[\u2160-\u216F][\.\uff0e]\s*(.+)/;
+
+  function saveCurrent() {
+    if (currentTerm) {
+      var def = currentDef.join('').trim();
+      if (def.length > 200) def = def.substring(0, 200) + '...';
+      terms[currentTerm] = { definition: def, category: currentCategory };
+    }
+  }
+
+  lines.forEach(function(line) {
+    var trimmed = line.trim();
+    if (!trimmed) return;
+    var catMatch = categoryPattern.exec(trimmed);
+    if (catMatch) {
+      saveCurrent();
+      currentTerm = null;
+      currentDef = [];
+      currentCategory = catMatch[1];
+      return;
+    }
+    var termMatch = termPattern.exec(trimmed);
+    if (termMatch) {
+      saveCurrent();
+      currentTerm = termMatch[2];
+      currentDef = [];
+      return;
+    }
+    if (currentTerm) {
+      if (currentDef.length < 3) {
+        currentDef.push(trimmed);
+      }
+    }
+  });
+  saveCurrent();
+  return terms;
+})();
+
+// Sorted term names by length descending (longer match first)
+var GLOSSARY_TERM_NAMES = Object.keys(GLOSSARY_TERMS).sort(function(a, b) {
+  return b.length - a.length;
+});
+var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
 </script>
 
 <script>
@@ -4723,6 +4892,100 @@ AI 生成コンテンツは誤りを含む可能性があります。
     // Check URL hash for direct section link
     handleHash();
     window.addEventListener('hashchange', handleHash);
+
+    // Glossary tooltip click handler
+    document.addEventListener('click', function(e) {
+      var termEl = e.target.closest('.glossary-term');
+      if (termEl) {
+        e.preventDefault();
+        e.stopPropagation();
+        showGlossaryPopup(termEl);
+        return;
+      }
+      // Close popup on outside click
+      var popup = document.querySelector('.glossary-popup');
+      var overlay = document.querySelector('.glossary-popup-overlay');
+      if (overlay && !e.target.closest('.glossary-popup')) {
+        closeGlossaryPopup();
+      }
+    });
+  }
+
+  // ========== Glossary Popup ==========
+  function showGlossaryPopup(termEl) {
+    closeGlossaryPopup();
+    var termName = termEl.getAttribute('data-term');
+    var termData = GLOSSARY_TERMS[termName];
+    if (!termData) return;
+
+    // Create overlay
+    var overlay = document.createElement('div');
+    overlay.className = 'glossary-popup-overlay';
+
+    // Create popup
+    var popup = document.createElement('div');
+    popup.className = 'glossary-popup';
+
+    popup.innerHTML =
+      '<div class="glossary-popup-header">' +
+        '<span class="glossary-popup-title">' + escapeHtml(termName) + '</span>' +
+        '<button class="glossary-popup-close" aria-label="\u9589\u3058\u308b">&times;</button>' +
+      '</div>' +
+      (termData.category ? '<div style="padding:8px 14px 0"><span class="glossary-popup-category">' + escapeHtml(termData.category) + '</span></div>' : '') +
+      '<div class="glossary-popup-body">' + escapeHtml(termData.definition) + '</div>' +
+      '<div class="glossary-popup-footer"><a class="glossary-popup-link" data-action="goto-glossary">\u7528\u8a9e\u89e3\u8aac\u3067\u8a73\u3057\u304f\u898b\u308b \u2192</a></div>';
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+
+    // Position popup near the term element
+    var rect = termEl.getBoundingClientRect();
+    var popupH = popup.offsetHeight;
+    var popupW = popup.offsetWidth;
+    var viewW = window.innerWidth;
+    var viewH = window.innerHeight;
+
+    var top = rect.bottom + 8;
+    var left = rect.left;
+
+    // Adjust if goes below viewport
+    if (top + popupH > viewH - 16) {
+      top = rect.top - popupH - 8;
+    }
+    // Adjust if goes off right
+    if (left + popupW > viewW - 16) {
+      left = viewW - popupW - 16;
+    }
+    // Adjust if goes off left
+    if (left < 16) left = 16;
+
+    // Mobile: center horizontally
+    if (viewW <= 900) {
+      left = (viewW - popupW) / 2;
+      if (left < 16) left = 16;
+    }
+
+    popup.style.top = Math.max(8, top) + 'px';
+    popup.style.left = left + 'px';
+
+    // Close button
+    popup.querySelector('.glossary-popup-close').addEventListener('click', function(e) {
+      e.stopPropagation();
+      closeGlossaryPopup();
+    });
+
+    // "Go to glossary" link
+    popup.querySelector('.glossary-popup-link').addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeGlossaryPopup();
+      showSection(GLOSSARY_SECTION_IDX);
+    });
+  }
+
+  function closeGlossaryPopup() {
+    var existing = document.querySelectorAll('.glossary-popup, .glossary-popup-overlay');
+    existing.forEach(function(el) { el.remove(); });
   }
 
   // ========== Mobile: back to home ==========
@@ -4981,7 +5244,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
       // Body
       var body = document.createElement('div');
       body.className = 'content-body';
-      body.innerHTML = formatContent(section.content, null);
+      body.innerHTML = formatContent(section.content, null, idx);
 
       block.appendChild(header);
       block.appendChild(body);
@@ -5072,7 +5335,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
   }
 
   // ========== Format Content ==========
-  function formatContent(text, highlightTerm) {
+  function formatContent(text, highlightTerm, sectionIdx) {
     if (!text || text.indexOf('\uff08\u30b3\u30f3\u30c6\u30f3\u30c4\u306f') === 0) {
       // Placeholder content
       return '<div class="placeholder-msg">' +
@@ -5153,7 +5416,39 @@ AI 生成コンテンツは誤りを含む可能性があります。
       }
     });
 
+    // Apply glossary term tooltips (skip glossary section itself)
+    if (sectionIdx !== GLOSSARY_SECTION_IDX && GLOSSARY_TERM_NAMES.length > 0) {
+      html = applyGlossaryTerms(html);
+    }
+
     return html;
+  }
+
+  // ========== Apply Glossary Term Tooltips ==========
+  function applyGlossaryTerms(html) {
+    // Split HTML by tags to only replace in text nodes
+    var parts = html.split(/(<[^>]+>)/);
+    for (var i = 0; i < parts.length; i++) {
+      // Skip HTML tags
+      if (parts[i].charAt(0) === '<') continue;
+      // Skip empty
+      if (!parts[i].trim()) continue;
+
+      var text = parts[i];
+      for (var j = 0; j < GLOSSARY_TERM_NAMES.length; j++) {
+        var term = GLOSSARY_TERM_NAMES[j];
+        if (term.length < 2) continue; // skip very short terms
+        var idx = text.indexOf(term);
+        if (idx >= 0) {
+          // Only replace first occurrence per text node
+          text = text.substring(0, idx) +
+            '<span class="glossary-term" data-term="' + escapeHtml(term) + '">' + escapeHtml(term) + '</span>' +
+            text.substring(idx + term.length);
+        }
+      }
+      parts[i] = text;
+    }
+    return parts.join('');
   }
 
   // ========== Search ==========
@@ -5257,7 +5552,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
             if (block) {
               var bodyEl = block.querySelector('.content-body');
               if (bodyEl) {
-                bodyEl.innerHTML = formatContent(POLICY_DATA[idx].content, q);
+                bodyEl.innerHTML = formatContent(POLICY_DATA[idx].content, q, idx);
               }
             }
             showSection(idx);
