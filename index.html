@@ -5179,7 +5179,22 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
       }
     }
 
-    showSection(idx);
+    // If searching, re-render content with highlights and scroll to first match
+    var activeQuery = searchInput.value.trim();
+    if (activeQuery) {
+      var block = document.getElementById('section-block-' + idx);
+      if (block) {
+        var bodyEl = block.querySelector('.content-body');
+        if (bodyEl) {
+          bodyEl.innerHTML = formatContent(POLICY_DATA[idx].content, activeQuery, idx);
+        }
+      }
+      showSection(idx, false, function() {
+        scrollToFirstHighlight(idx);
+      });
+    } else {
+      showSection(idx);
+    }
     closeSidebar();
   }
 
