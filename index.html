@@ -5281,23 +5281,35 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
     contentCard.classList.remove('visible');
     allSectionsContainer.style.display = '';
 
-    // Scroll to the section block
-    var target = document.getElementById('section-block-' + idx);
-    if (target) {
-      isScrollingToSection = true;
-      var r = target.getBoundingClientRect();
-      var cr = mainContent.getBoundingClientRect();
-      mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - 10, behavior: 'smooth' });
-      setTimeout(function() { isScrollingToSection = false; }, 800);
-    }
-
     // Update hash without triggering hashchange loop
     history.replaceState(null, '', '#sec-' + (idx + 1));
 
-    // Mobile: slide to content panel
-    if (window.innerWidth <= 900) {
+    // Scroll to the section block
+    var target = document.getElementById('section-block-' + idx);
+    var isMobile = window.innerWidth <= 900;
+
+    if (isMobile) {
+      // Mobile: slide in first, then scroll after transition completes
       document.body.classList.add('mobile-content-open');
       document.body.classList.remove('mobile-sidebar-overlay');
+      if (target) {
+        setTimeout(function() {
+          isScrollingToSection = true;
+          var r = target.getBoundingClientRect();
+          var cr = mainContent.getBoundingClientRect();
+          mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - 10, behavior: 'smooth' });
+          setTimeout(function() { isScrollingToSection = false; }, 800);
+        }, 350); // wait for slide transition (300ms) + buffer
+      }
+    } else {
+      // Desktop: scroll immediately
+      if (target) {
+        isScrollingToSection = true;
+        var r = target.getBoundingClientRect();
+        var cr = mainContent.getBoundingClientRect();
+        mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - 10, behavior: 'smooth' });
+        setTimeout(function() { isScrollingToSection = false; }, 800);
+      }
     }
   }
 
