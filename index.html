@@ -558,6 +558,21 @@ body {
   font-weight: 600;
 }
 
+.content-body .search-highlight.search-highlight-focus {
+  background: #f39c12;
+  color: #fff;
+  outline: 2px solid #e67e22;
+  outline-offset: 1px;
+  animation: highlight-pulse 1.5s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); }
+  60% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
 .content-body .placeholder-msg {
   display: flex;
   flex-direction: column;
@@ -5590,6 +5605,8 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
               }
             }
             showSection(idx);
+            // Scroll to first highlight after section scroll completes
+            scrollToFirstHighlight(idx);
           };
         })(r.idx, query));
 
@@ -5616,6 +5633,27 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
 
     searchResultsPanel.classList.remove('visible');
     allSectionsContainer.style.display = '';
+  }
+
+  // ========== Scroll to First Highlight ==========
+  function scrollToFirstHighlight(sectionIdx) {
+    // Wait for showSection scroll to finish, then scroll to highlight
+    var delay = (window.innerWidth <= 900) ? 900 : 500;
+    setTimeout(function() {
+      var block = document.getElementById('section-block-' + sectionIdx);
+      if (!block) return;
+      var highlights = block.querySelectorAll('.search-highlight');
+      if (highlights.length > 0) {
+        var first = highlights[0];
+        first.classList.add('search-highlight-focus');
+        var r = first.getBoundingClientRect();
+        var cr = mainContent.getBoundingClientRect();
+        mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - (cr.height / 3), behavior: 'smooth' });
+        setTimeout(function() {
+          first.classList.remove('search-highlight-focus');
+        }, 2000);
+      }
+    }, delay);
   }
 
   // ========== Keyboard Shortcuts ==========
