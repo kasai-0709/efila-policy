@@ -5169,24 +5169,32 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
   }
 
   function onSubNavClick(idx, subTitle) {
-    showSection(idx);
+    var isMobile = window.innerWidth <= 900;
+    showSection(idx, true); // skip scroll — we handle it here
     closeSidebar();
 
-    // Scroll to sub-section in content after render
+    if (isMobile) {
+      // Mobile: ensure slide-in transition happens
+      document.body.classList.add('mobile-content-open');
+      document.body.classList.remove('mobile-sidebar-overlay');
+    }
+
+    // Scroll to sub-section after mobile slide-in (350ms) or immediately on desktop
+    var delay = isMobile ? 400 : 100;
     setTimeout(function() {
       var scroller = document.querySelector('main.main');
-      // Search in allSectionsContainer (continuous scroll mode) or contentBody (single section mode)
       var searchContainer = allSectionsContainer.style.display !== 'none' ? allSectionsContainer : contentBody;
       var sectionBlock = document.getElementById('section-block-' + idx);
-      // Narrow search to the target section block if available
       var searchScope = sectionBlock || searchContainer;
       var elements = searchScope.querySelectorAll('.policy-heading-1, .policy-heading-2, .policy-heading-3, .policy-line');
       for (var i = 0; i < elements.length; i++) {
         var el = elements[i];
         if (el.textContent.indexOf(subTitle) >= 0 || subTitle.indexOf(el.textContent.trim()) >= 0) {
+          isScrollingToSection = true;
           var r = el.getBoundingClientRect();
           var cr = scroller.getBoundingClientRect();
           scroller.scrollTop = scroller.scrollTop + r.top - cr.top - 20;
+          setTimeout(function() { isScrollingToSection = false; }, 800);
           el.style.transition = 'background 0.3s';
           el.style.background = '#ffeaa7';
           (function(target) {
@@ -5195,7 +5203,7 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
           break;
         }
       }
-    }, 100);
+    }, delay);
   }
 
   // ========== Render All Sections (continuous scroll) ==========
@@ -5268,7 +5276,7 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
 
   // ========== Show Section (scroll to) ==========
   var isScrollingToSection = false;
-  function showSection(idx) {
+  function showSection(idx, skipScroll) {
     var section = POLICY_DATA[idx];
     if (!section) return;
 
@@ -5291,6 +5299,9 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
 
     // Update hash without triggering hashchange loop
     history.replaceState(null, '', '#sec-' + (idx + 1));
+
+    // Skip scroll when called from onSubNavClick (it handles its own scroll)
+    if (skipScroll) return;
 
     // Scroll to the section block
     var target = document.getElementById('section-block-' + idx);
