@@ -414,6 +414,27 @@ body {
   margin: 0 auto;
 }
 
+/* All-sections continuous view */
+.all-sections-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.section-block {
+  background: var(--bg-content);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 32px;
+}
+.section-block .content-header {
+  padding: 32px 40px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.section-block .content-body {
+  padding: 32px 40px 40px;
+  font-size: 0.95rem;
+  line-height: 2;
+}
+
 .content-header {
   padding: 32px 40px 24px;
   border-bottom: 1px solid var(--border);
@@ -915,6 +936,8 @@ body {
       </div>
       <div class="content-body" id="contentBody"></div>
     </div>
+
+    <div class="all-sections-container" id="allSectionsContainer"></div>
 
     <div class="search-results-panel" id="searchResultsPanel">
       <div class="search-results-header">
@@ -4626,6 +4649,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
   var contentTitle = $('contentTitle');
   var contentSubNav = $('contentSubNav');
   var contentBody = $('contentBody');
+  var allSectionsContainer = $('allSectionsContainer');
   var searchResultsPanel = $('searchResultsPanel');
   var searchResultsSummary = $('searchResultsSummary');
   var searchResultsList = $('searchResultsList');
@@ -4659,6 +4683,9 @@ AI 生成コンテンツは誤りを含む可能性があります。
     // Build navigation
     buildNav();
 
+    // Render all sections continuously
+    renderAllSections();
+
     // Events
     searchInput.addEventListener('input', onSearchInput);
     scrollTopBtn.addEventListener('click', function() {
@@ -4690,7 +4717,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
       mobileSidebarFab.addEventListener('click', openMobileSidebarOverlay);
     }
 
-    // Logo click → go home (mobile: back to sidebar, desktop: reload)
+    // Logo click → go home (mobile: back to sidebar, desktop: scroll to top)
     var logoImg = document.querySelector('.header-logo-img');
     if (logoImg) {
       logoImg.style.cursor = 'pointer';
@@ -4698,9 +4725,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
         if (window.innerWidth <= 900) {
           mobileGoBack();
         } else {
-          // Desktop: clear selection and show home
-          window.location.hash = '';
-          window.location.reload();
+          mainContent.scrollTo({ top: 0, behavior: 'smooth' });
         }
       });
     }
@@ -4894,13 +4919,81 @@ AI 生成コンテンツは誤りを含む可能性があります。
     }, 100);
   }
 
-  // ========== Show Section ==========
+  // ========== Render All Sections (continuous scroll) ==========
+  function renderAllSections() {
+    allSectionsContainer.innerHTML = '';
+    welcome.style.display = 'none';
+    allSectionsContainer.style.display = '';
+
+    POLICY_DATA.forEach(function(section, idx) {
+      var block = document.createElement('div');
+      block.className = 'section-block';
+      block.id = 'section-block-' + idx;
+
+      // Header
+      var header = document.createElement('div');
+      header.className = 'content-header';
+
+      var numEl = document.createElement('div');
+      numEl.className = 'content-section-num';
+      numEl.textContent = 'SECTION ' + (idx + 1);
+
+      var titleEl = document.createElement('h1');
+      titleEl.className = 'content-title';
+      titleEl.textContent = section.title;
+
+      // Sub-navigation chips
+      var subNav = document.createElement('div');
+      subNav.className = 'content-sub-nav';
+      var subSections = detectSubSections(section);
+      subSections.forEach(function(sub) {
+        var chip = document.createElement('span');
+        chip.className = 'content-sub-nav-item';
+        chip.textContent = sub.title;
+        chip.addEventListener('click', function() {
+          var targets = body.querySelectorAll('.policy-heading-1, .policy-heading-2, .policy-heading-3, .policy-line');
+          for (var i = 0; i < targets.length; i++) {
+            if (targets[i].textContent.indexOf(sub.title) >= 0) {
+              var r = targets[i].getBoundingClientRect();
+              var cr = mainContent.getBoundingClientRect();
+              mainContent.scrollTop = mainContent.scrollTop + r.top - cr.top - 20;
+              targets[i].style.transition = 'background 0.3s';
+              targets[i].style.background = '#ffeaa7';
+              (function(t) {
+                setTimeout(function() { t.style.background = 'transparent'; }, 2000);
+              })(targets[i]);
+              break;
+            }
+          }
+        });
+        subNav.appendChild(chip);
+      });
+
+      header.appendChild(numEl);
+      header.appendChild(titleEl);
+      if (subSections.length > 0) header.appendChild(subNav);
+
+      // Body
+      var body = document.createElement('div');
+      body.className = 'content-body';
+      body.innerHTML = formatContent(section.content, null);
+
+      block.appendChild(header);
+      block.appendChild(body);
+      allSectionsContainer.appendChild(block);
+    });
+
+    // Set first section active
+    updateActiveFromScroll();
+  }
+
+  // ========== Show Section (scroll to) ==========
+  var isScrollingToSection = false;
   function showSection(idx) {
     var section = POLICY_DATA[idx];
     if (!section) return;
 
     activeSection = idx;
-    window.location.hash = 'sec-' + (idx + 1);
 
     // Update nav active state
     document.querySelectorAll('.nav-item').forEach(function(el) {
@@ -4912,57 +5005,65 @@ AI 生成コンテンツは誤りを含む可能性があります。
       }
     });
 
-    // Update content header
-    contentSectionNum.textContent = 'SECTION ' + (idx + 1);
-    contentTitle.textContent = section.title;
-
-    // Sub-navigation chips in content header
-    var subSections = detectSubSections(section);
-    contentSubNav.innerHTML = '';
-    subSections.forEach(function(sub) {
-      var chip = document.createElement('span');
-      chip.className = 'content-sub-nav-item';
-      chip.textContent = sub.title;
-      chip.addEventListener('click', function() {
-        var scroller = document.querySelector('main.main');
-        var targets = contentBody.querySelectorAll('.policy-heading-1, .policy-heading-2, .policy-heading-3, .policy-line');
-        for (var i = 0; i < targets.length; i++) {
-          if (targets[i].textContent.indexOf(sub.title) >= 0) {
-            var r = targets[i].getBoundingClientRect();
-            var cr = scroller.getBoundingClientRect();
-            scroller.scrollTop = scroller.scrollTop + r.top - cr.top - 20;
-            targets[i].style.transition = 'background 0.3s';
-            targets[i].style.background = '#ffeaa7';
-            (function(t) {
-              setTimeout(function() { t.style.background = 'transparent'; }, 2000);
-            })(targets[i]);
-            break;
-          }
-        }
-      });
-      contentSubNav.appendChild(chip);
-    });
-
-    // Render content (with active search highlight if any)
-    var activeQuery = searchInput.value.trim();
-    contentBody.innerHTML = formatContent(section.content, activeQuery || null);
-
-    // Show content card, hide others
-    welcome.style.display = 'none';
+    // Hide search results, show all sections
     searchResultsPanel.classList.remove('visible');
     contentCard.classList.remove('visible');
-    // Force reflow for animation
-    void contentCard.offsetWidth;
-    contentCard.classList.add('visible');
+    allSectionsContainer.style.display = '';
+
+    // Scroll to the section block
+    var target = document.getElementById('section-block-' + idx);
+    if (target) {
+      isScrollingToSection = true;
+      var r = target.getBoundingClientRect();
+      var cr = mainContent.getBoundingClientRect();
+      mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - 10, behavior: 'smooth' });
+      setTimeout(function() { isScrollingToSection = false; }, 800);
+    }
+
+    // Update hash without triggering hashchange loop
+    history.replaceState(null, '', '#sec-' + (idx + 1));
 
     // Mobile: slide to content panel
     if (window.innerWidth <= 900) {
       document.body.classList.add('mobile-content-open');
       document.body.classList.remove('mobile-sidebar-overlay');
     }
+  }
 
-    // Scroll main to top
-    mainContent.scrollTo({ top: 0 });
+  // ========== Update active nav from scroll position ==========
+  function updateActiveFromScroll() {
+    if (isScrollingToSection) return;
+    var blocks = allSectionsContainer.querySelectorAll('.section-block');
+    var scrollTop = mainContent.scrollTop;
+    var offset = mainContent.getBoundingClientRect().top + 80;
+    var newActive = 0;
+
+    for (var i = 0; i < blocks.length; i++) {
+      var rect = blocks[i].getBoundingClientRect();
+      if (rect.top <= offset) {
+        newActive = i;
+      }
+    }
+
+    if (activeSection !== newActive) {
+      activeSection = newActive;
+      document.querySelectorAll('.nav-item').forEach(function(el) {
+        var elIdx = parseInt(el.dataset.index, 10);
+        if (elIdx === newActive) {
+          el.classList.add('active');
+          // Scroll nav item into view if needed
+          var navListEl = document.getElementById('navList');
+          var elRect = el.getBoundingClientRect();
+          var navRect = navListEl.getBoundingClientRect();
+          if (elRect.top < navRect.top || elRect.bottom > navRect.bottom) {
+            el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+        } else {
+          el.classList.remove('active');
+        }
+      });
+      history.replaceState(null, '', '#sec-' + (newActive + 1));
+    }
   }
 
   // ========== Format Content ==========
@@ -5145,9 +5246,16 @@ AI 生成コンテンツは誤りを含む可能性があります。
 
         item.addEventListener('click', (function(idx, q) {
           return function() {
+            clearSearch();
+            // Highlight matching text in the section block
+            var block = document.getElementById('section-block-' + idx);
+            if (block) {
+              var bodyEl = block.querySelector('.content-body');
+              if (bodyEl) {
+                bodyEl.innerHTML = formatContent(POLICY_DATA[idx].content, q);
+              }
+            }
             showSection(idx);
-            // Re-render with highlights
-            contentBody.innerHTML = formatContent(POLICY_DATA[idx].content, q);
           };
         })(r.idx, query));
 
@@ -5155,9 +5263,10 @@ AI 生成コンテンツは誤りを含む可能性があります。
       });
     }
 
-    // Show search results
+    // Show search results, hide all sections
     welcome.style.display = 'none';
     contentCard.classList.remove('visible');
+    allSectionsContainer.style.display = 'none';
     searchResultsPanel.classList.remove('visible');
     void searchResultsPanel.offsetWidth;
     searchResultsPanel.classList.add('visible');
@@ -5172,14 +5281,7 @@ AI 生成コンテンツは誤りを含む可能性があります。
     });
 
     searchResultsPanel.classList.remove('visible');
-
-    if (activeSection !== null) {
-      // Re-render without highlight
-      contentBody.innerHTML = formatContent(POLICY_DATA[activeSection].content, null);
-      contentCard.classList.add('visible');
-    } else {
-      welcome.style.display = '';
-    }
+    allSectionsContainer.style.display = '';
   }
 
   // ========== Keyboard Shortcuts ==========
@@ -5210,6 +5312,8 @@ AI 生成コンテンツは誤りを含む可能性があります。
   function onMainScroll() {
     var show = mainContent.scrollTop > 300;
     scrollTopBtn.classList.toggle('visible', show);
+    // Update active nav from scroll position
+    updateActiveFromScroll();
   }
 
   // ========== Mobile sidebar ==========
