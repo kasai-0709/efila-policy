@@ -5109,7 +5109,7 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
       var patterns = [
         /^[\u2160-\u216F][\uff0e\.]\s*(.+)/,       // Roman numerals
         /^[IVX]+[\.\uff0e]\s*(.+)/,                 // Latin roman numerals
-        /^[\u2460-\u2473]\s*(.+)/,                   // Circled numbers
+        // Circled numbers excluded from sidebar navigation
       ];
 
       lines.forEach(function(line) {
